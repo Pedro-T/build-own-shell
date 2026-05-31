@@ -6,10 +6,11 @@ def is_valid_command(cmd: str) -> bool:
 
 
 def main():
-    sys.stdout.write("$ ")
-    user_input: str = input()
-    if not is_valid_command(user_input):
-        print(f"{user_input}: command not found")
+    while True:
+        sys.stdout.write("$ ")
+        user_input: str = input()
+        if not is_valid_command(user_input):
+            print(f"{user_input}: command not found")
 
 
 
