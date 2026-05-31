@@ -1,17 +1,19 @@
 import sys
 
 
-def is_valid_command(cmd: str) -> bool:
-    return False
+_builtins: dict[str, callable] = {
+    "exit": lambda: exit(0)
+}
 
 
 def main():
     while True:
         sys.stdout.write("$ ")
         user_input: str = input()
-        if not is_valid_command(user_input):
+        if not user_input in _builtins:
             print(f"{user_input}: command not found")
-
+        else:
+            _builtins[user_input]()
 
 
 if __name__ == "__main__":
