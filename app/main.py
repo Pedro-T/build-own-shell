@@ -14,6 +14,8 @@ _builtins: dict[str, Callable] = {
 
 
 def chdir(req_path: str, absolute=False) -> None:
+    if req_path.startswith("~"):
+        req_path = req_path.replace("~", os.environ["HOME"])
     path: Path = Path(req_path)
     if not path.exists():
         print(f"cd: {req_path}: No such file or directory")
