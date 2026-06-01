@@ -2,13 +2,24 @@ import sys
 import os
 from pathlib import Path
 import subprocess
+from typing import Callable
 
-_builtins: dict[str, callable] = {
+_builtins: dict[str, Callable] = {
     "exit": lambda args: exit(0),
     "echo": lambda args: print(" ".join(args[1:]) if len(args) > 1 else ""),
     "type": lambda args: _builtin_type(args[1]) if len(args) > 1 else print_not_found(""),
-    "pwd": lambda args: print(os.getcwd())
+    "pwd": lambda args: print(os.getcwd()),
+    "cd": lambda args: chdir(args[1] if len(args) > 1 else "")
 }
+
+
+def chdir(req_path: str, absolute=False) -> None:
+    path: Path = Path(req_path)
+    if not path.exists():
+        print(f"cd: {req_path}: No such file or directory")
+        return
+    os.chdir(path)
+
 
 def is_path_command(command: str) -> tuple[bool, Path|None]:
     path_var: str = os.environ["PATH"]
