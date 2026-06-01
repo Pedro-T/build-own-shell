@@ -12,6 +12,8 @@ def is_path_command(command: str) -> tuple[bool, Path|None]:
     path_var: str = os.environ["PATH"]
     for seq in path_var.split(os.pathsep):
         dir_path = Path(seq)
+        if not dir_path.exists():
+            continue
         for file in dir_path.iterdir():
             if file.name == command and os.access(dir_path / file, os.X_OK):
                 return True, dir_path / file
