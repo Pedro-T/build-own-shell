@@ -44,9 +44,8 @@ def main():
         elif user_input[0] in _builtins:
             _builtins[user_input[0]](user_input)
         else:
-            valid_external, path = is_path_command(user_input[0])
+            valid_external, _ = is_path_command(user_input[0])
             if valid_external:
-                user_input[0] = path
                 subprocess.run(user_input)
             else:
                 print_not_found(user_input[0])
