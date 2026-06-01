@@ -6,7 +6,8 @@ import subprocess
 _builtins: dict[str, callable] = {
     "exit": lambda args: exit(0),
     "echo": lambda args: print(" ".join(args[1:]) if len(args) > 1 else ""),
-    "type": lambda args: _builtin_type(args[1]) if len(args) > 1 else print_not_found("")
+    "type": lambda args: _builtin_type(args[1]) if len(args) > 1 else print_not_found(""),
+    "pwd": lambda args: print(os.getcwd())
 }
 
 def is_path_command(command: str) -> tuple[bool, Path|None]:
