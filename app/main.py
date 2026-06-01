@@ -1,6 +1,7 @@
 import sys
 import os
 from pathlib import Path
+import subprocess
 
 _builtins: dict[str, callable] = {
     "exit": lambda args: exit(0),
@@ -15,7 +16,7 @@ def is_path_command(command: str) -> tuple[bool, Path|None]:
         if not dir_path.exists():
             continue
         for file in dir_path.iterdir():
-            if file.name == command and os.access(dir_path / file, os.X_OK):
+            if file.name == command and os.access(dir_path / file, os.X_OK): #matches command and executable
                 return True, dir_path / file
     return False, None
 
@@ -38,10 +39,17 @@ def main():
     while True:
         sys.stdout.write("$ ")
         user_input: list[str] = input().split(" ")
-        if not user_input or user_input[0] not in _builtins:
-            print_not_found(user_input[0])
-        else:
+        if not user_input:
+            print_not_found(user_input)
+        elif user_input[0] in _builtins:
             _builtins[user_input[0]](user_input)
+        else:
+            valid_external, path = is_path_command(user_input[0])
+            if valid_external:
+                user_input[0] = path
+                subprocess.run(user_input)
+            else:
+                print_not_found(user_input[0])
 
 
 if __name__ == "__main__":
