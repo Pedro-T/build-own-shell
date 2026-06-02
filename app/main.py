@@ -64,7 +64,11 @@ def parse_input(user_input: str) -> list[str]:
             i += 2
             continue
         if c == "\\" and curr_quot != "'":
-            if i < len(user_input) - 1:
+            if i >= len(user_input) - 1:
+                continue
+            elif curr_quot == '"' and user_input[i+1] not in ['"', "\\", "$", "`", "\n"]:
+                token += c
+            else:
                 token += user_input[i+1]
                 i += 1
         elif c == "'":
