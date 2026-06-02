@@ -11,7 +11,7 @@ class Shell:
     def __init__(self):
         self.buffer: str = ""
         self.redirect: bool = False
-        self.target: str = ""
+        self.stdout_target: str = ""
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -123,8 +123,8 @@ class Shell:
         else:
             valid_external, _ = self.is_path_command(user_input[0])
             if valid_external:
-                if self.target:
-                    with open(self.target, "w") as f:
+                if self.stdout_target:
+                    with open(self.stdout_target, "w") as f:
                         subprocess.run(user_input, stdout=f)
                 else:
                     subprocess.run(user_input)
@@ -134,20 +134,30 @@ class Shell:
 
     def main(self):
 
-        while True:
-            self.buffer = ""
-            self.redirect = False
-            self.target = ""
-            sys.stdout.write("$ ")
-            user_input: list[str] = self.parse_input(input())
+        def capture_redirect():
+            user_input = [token.replace("1>", ">") for token in user_input]
             if ">" in user_input:
                 idx: int = user_input.index(">") + 1
                 if len(user_input) > idx:
-                    self.target = user_input[idx]
+                    self.stdout_target = user_input[idx]
                     self.redirect = True
                 user_input = user_input[:idx-1]
+            elif "2>" in user_input:
+                idx: int = user_input.index("2>") + 1
+                if len(user_input) > idx:
+                    self.stderr_target = user_input[idx]
+                    self.redirect = True
+                user_input = user_input[:idx-1]
+
+        while True:
+            self.buffer = ""
+            self.redirect = False
+            self.stdout_target = ""
+            sys.stdout.write("$ ")
+            user_input: list[str] = self.parse_input(input())
+            capture_redirect(user_input)
             if self.redirect:
-                with open(self.target, "w") as f:
+                with open(self.stdout_target, "w") as f:
                     with redirect_stdout(f):
                         self.handle_input(user_input)
             else:
