@@ -56,13 +56,15 @@ def parse_input(user_input: str) -> list[str]:
     token: str = ""
     curr_quot: str = ""
 
-    for i in range(len(user_input)):
+    i: int = 0
+
+    while i < len(user_input):
         c = user_input[i]
+        if c in ['"', "'"] and i < len(user_input) - 1 and user_input[i+1] == c:
+            i += 2
+            continue
         if c == "'":
             if curr_quot == "'" and token: # we are in a single-quoted string and it just ended
-                if i < len(user_input) - 1 and c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
-                    i += 1
-                    continue
                 tokens.append(token)
                 token = ""
                 curr_quot = ""
@@ -72,9 +74,6 @@ def parse_input(user_input: str) -> list[str]:
                 token += c
         elif c == '"':
             if curr_quot == '"' and token: # we are in a double-quoted string and it just ended
-                if i < len(user_input) - 1 and c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
-                    i += 1
-                    continue
                 tokens.append(token)
                 token = ""
                 curr_quot = ""
@@ -90,6 +89,7 @@ def parse_input(user_input: str) -> list[str]:
                 token += c
         else:
             token += c
+        i += 1
     if token:
         tokens.append(token)
     return tokens
