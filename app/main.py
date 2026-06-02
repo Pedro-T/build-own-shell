@@ -92,7 +92,6 @@ def parse_input(user_input: str) -> list[str]:
             token += c
     if token:
         tokens.append(token)
-    print(tokens)
     return tokens
 
 
