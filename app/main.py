@@ -22,17 +22,17 @@ class Shell:
         
 
     def _builtin_echo(self, args: list[str]) -> None:
-        self.buffer += " ".join(args[1:]) if len(args) > 1 else ""
+        print(" ".join(args[1:]) if len(args) > 1 else "")
 
     def _builtin_pwd(self, args: list[str]) -> None:
-        self.buffer += os.getcwd()
+        print(os.getcwd())
 
     def _builtin_cd(self, req_path: str, absolute=False) -> None:
         if req_path.startswith("~"):
             req_path = req_path.replace("~", os.environ["HOME"])
         path: Path = Path(req_path)
         if not path.exists():
-            self.buffer+= f"cd: {req_path}: No such file or directory"
+            print(f"cd: {req_path}: No such file or directory")
             return
         os.chdir(path)
 
@@ -51,17 +51,17 @@ class Shell:
 
     def _builtin_type(self, command: str) -> None:
         if command in self._builtins:
-            self.buffer += f"{command} is a shell builtin"
+            print(f"{command} is a shell builtin")
             return
         valid, fullpath = self.is_path_command(command)
         if valid:
-            self.bufer += f"{command} is {fullpath}"
+            print(f"{command} is {fullpath}")
             return
         self.print_not_found(command)
 
 
     def print_not_found(self, command: str) -> None:
-        self.buffer += f"{command}: not found"
+        print(f"{command}: not found")
 
 
     def parse_input(self, user_input: str) -> list[str]:
@@ -115,6 +115,19 @@ class Shell:
         return tokens
 
 
+    def handle_input(self, user_input: list[str]) -> None:
+        if not user_input:
+            self.print_not_found(user_input)
+        elif user_input[0] in self._builtins:
+            self._builtins[user_input[0]](user_input)
+        else:
+            valid_external, _ = self.is_path_command(user_input[0])
+            if valid_external:
+                subprocess.run(user_input)
+            else:
+                self.print_not_found(user_input[0])
+
+
     def main(self):
 
         while True:
@@ -129,23 +142,12 @@ class Shell:
                     self.target = user_input[idx]
                     self.redirect = True
                 user_input = user_input[:idx-1]
-            if not user_input:
-                self.print_not_found(user_input)
-            elif user_input[0] in self._builtins:
-                self._builtins[user_input[0]](user_input)
-            else:
-                valid_external, _ = self.is_path_command(user_input[0])
-                if valid_external:
-                    subprocess.run(user_input)
-                else:
-                    self.print_not_found(user_input[0])
-        
             if self.redirect:
                 with open(self.target, "w") as f:
                     with redirect_stdout(f):
-                        print(self.buffer)
+                        self.handle_input(user_input)
             else:
-                print(self.buffer)
+                self.handle_input(user_input)
 
 
 if __name__ == "__main__":
