@@ -134,7 +134,7 @@ class Shell:
 
     def main(self):
 
-        def capture_redirect():
+        def capture_redirect(user_input: str) -> list[str]:
             user_input = [token.replace("1>", ">") for token in user_input]
             if ">" in user_input:
                 idx: int = user_input.index(">") + 1
@@ -148,6 +148,7 @@ class Shell:
                     self.stderr_target = user_input[idx]
                     self.redirect = True
                 user_input = user_input[:idx-1]
+            return user_input
 
         while True:
             self.buffer = ""
@@ -155,7 +156,7 @@ class Shell:
             self.stdout_target = ""
             sys.stdout.write("$ ")
             user_input: list[str] = self.parse_input(input())
-            capture_redirect(user_input)
+            user_input = capture_redirect(user_input)
             if self.redirect:
                 with open(self.stdout_target, "w") as f:
                     with redirect_stdout(f):
