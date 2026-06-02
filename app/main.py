@@ -9,11 +9,11 @@ _builtins: dict[str, Callable] = {
     "echo": lambda args: print(" ".join(args[1:]) if len(args) > 1 else ""),
     "type": lambda args: _builtin_type(args[1]) if len(args) > 1 else print_not_found(""),
     "pwd": lambda args: print(os.getcwd()),
-    "cd": lambda args: chdir(args[1] if len(args) > 1 else "")
+    "cd": lambda args: _builtin_cd(args[1] if len(args) > 1 else "")
 }
 
 
-def chdir(req_path: str, absolute=False) -> None:
+def _builtin_cd(req_path: str, absolute=False) -> None:
     if req_path.startswith("~"):
         req_path = req_path.replace("~", os.environ["HOME"])
     path: Path = Path(req_path)
@@ -45,14 +45,49 @@ def _builtin_type(command: str) -> None:
         return
     print_not_found(command)
 
+
 def print_not_found(command: str) -> None:
     print(f"{command}: not found")
+
+
+def parse_input(user_input: str) -> list[str]:
+    tokens: list[str] = []
+
+    token: str = ""
+    curr_quot: str = ""
+
+    for i in range(len(user_input)):
+        c = user_input[i]
+        if c == "'":
+            if curr_quot == "'" and token: # we are in a single-quoted string and it just ended
+                if c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
+                    i += 1
+                    continue
+                tokens.append(token)
+                token = ""
+            elif not curr_quot: # start a new quoted sequence
+                curr_quot = "'"
+            else: # other quoted sequence, just append
+                token += c
+        elif c == '"':
+            if curr_quot == '"' and token: # we are in a double-quoted string and it just ended
+                if c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
+                    i += 1
+                    continue
+                tokens.append(token)
+                token = ""
+            elif not curr_quot: # start a new quoted sequence
+                curr_quot = '"'
+            else: # other quoted sequence, just append
+                token += c
+        elif c == " ":
+            tokens.append(token)
 
 
 def main():
     while True:
         sys.stdout.write("$ ")
-        user_input: list[str] = input().split(" ")
+        user_input: list[str] = parse_input(input())
         if not user_input:
             print_not_found(user_input)
         elif user_input[0] in _builtins:
