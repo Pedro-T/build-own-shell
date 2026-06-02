@@ -1,1 +1,8 @@
-florp: not found
+app
+codecrafters.yml
+florp.txt
+output.txt
+pyproject.toml
+README.md
+uv.lock
+your_program.sh

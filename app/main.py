@@ -123,7 +123,11 @@ class Shell:
         else:
             valid_external, _ = self.is_path_command(user_input[0])
             if valid_external:
-                subprocess.run(user_input)
+                if self.target:
+                    with open(self.target, "w") as f:
+                        subprocess.run(user_input, stdout=f)
+                else:
+                    subprocess.run(user_input)
             else:
                 self.print_not_found(user_input[0])
 
