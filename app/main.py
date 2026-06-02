@@ -65,25 +65,23 @@ def parse_input(user_input: str) -> list[str]:
             continue
         if c == "\\" and curr_quot != "'":
             if i >= len(user_input) - 1:
-                continue
+                i+= 1
             elif curr_quot == '"' and user_input[i+1] not in ['"', "\\", "$", "`", "\n"]:
                 token += c
+                i += 1
             else:
                 token += user_input[i+1]
-                i += 1
+                i += 2
+            continue
         elif c == "'":
-            if curr_quot == "'" and token: # we are in a single-quoted string and it just ended
-                tokens.append(token)
-                token = ""
+            if curr_quot == "'": # we are in a single-quoted string and it just ended
                 curr_quot = ""
             elif not curr_quot: # start a new quoted sequence
                 curr_quot = "'"
             else: # other quoted sequence, just append
                 token += c
         elif c == '"':
-            if curr_quot == '"' and token: # we are in a double-quoted string and it just ended
-                tokens.append(token)
-                token = ""
+            if curr_quot == '"': # we are in a double-quoted string and it just ended
                 curr_quot = ""
             elif not curr_quot: # start a new quoted sequence
                 curr_quot = '"'
