@@ -83,10 +83,10 @@ def parse_input(user_input: str) -> list[str]:
             else: # other quoted sequence, just append
                 token += c
         elif c == " ":
-            if not curr_quot:
+            if token and not curr_quot:
                 tokens.append(token)
                 token = ""
-            else:
+            elif curr_quot:
                 token += c
         else:
             token += c
