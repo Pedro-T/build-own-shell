@@ -60,29 +60,39 @@ def parse_input(user_input: str) -> list[str]:
         c = user_input[i]
         if c == "'":
             if curr_quot == "'" and token: # we are in a single-quoted string and it just ended
-                if c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
+                if i < len(user_input) - 1 and c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
                     i += 1
                     continue
                 tokens.append(token)
                 token = ""
+                curr_quot = ""
             elif not curr_quot: # start a new quoted sequence
                 curr_quot = "'"
             else: # other quoted sequence, just append
                 token += c
         elif c == '"':
             if curr_quot == '"' and token: # we are in a double-quoted string and it just ended
-                if c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
+                if i < len(user_input) - 1 and c[i+1] == "'": # two quote strings together, skip ahead and keep appending to token
                     i += 1
                     continue
                 tokens.append(token)
                 token = ""
+                curr_quot = ""
             elif not curr_quot: # start a new quoted sequence
                 curr_quot = '"'
             else: # other quoted sequence, just append
                 token += c
         elif c == " ":
-            tokens.append(token)
-    tokens.append(token)
+            if not curr_quot:
+                tokens.append(token)
+                token = ""
+            else:
+                token += c
+        else:
+            token += c
+    if token:
+        tokens.append(token)
+    print(tokens)
     return tokens
 
 
