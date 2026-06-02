@@ -63,7 +63,11 @@ def parse_input(user_input: str) -> list[str]:
         if c in ['"', "'"] and i < len(user_input) - 1 and user_input[i+1] == c:
             i += 2
             continue
-        if c == "'":
+        if c == "\\":
+            if i < len(user_input) - 1:
+                token += user_input[i+1]
+                i += 1
+        elif c == "'":
             if curr_quot == "'" and token: # we are in a single-quoted string and it just ended
                 tokens.append(token)
                 token = ""
