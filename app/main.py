@@ -152,7 +152,8 @@ class Shell:
         while True:
             self.buffer = ""
             self.redirect = False
-            self.stdout_target = ""
+            self.stdout_target = None
+            self.stderr_target = None
             sys.stdout.write("$ ")
             user_input: list[str] = self.parse_input(input())
             user_input = capture_redirect(user_input)
