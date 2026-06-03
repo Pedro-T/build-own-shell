@@ -21,11 +21,11 @@ class Shell:
         }
 
     def _builtin_echo(self, args: list[str]) -> None:
-        self.print(" ".join(args[1:]) if len(args) > 1 else "")
+        print(" ".join(args[1:]) if len(args) > 1 else "")
 
 
     def _builtin_pwd(self, args: list[str]) -> None:
-        self.print(os.getcwd())
+        print(os.getcwd())
 
 
     def _builtin_cd(self, req_path: str, absolute=False) -> None:
