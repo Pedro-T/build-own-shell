@@ -172,7 +172,10 @@ class Shell:
         
         readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
         readline.set_completer(self.completer)
-        readline.parse_and_bind("bind ^I rl_complete") # due to libedit apparently
+        if "libedit" in readline.__doc__:
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind("tab: complete")
 
         while True:
             self.buffer = ""
