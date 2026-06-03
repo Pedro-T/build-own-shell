@@ -41,15 +41,24 @@ class Shell:
         os.chdir(path)
 
 
-    def is_path_command(self,command: str) -> tuple[bool, Path|None]:
+    def get_path_commands(self) -> dict[str, str]:
+        result: dict[str, str] = {}
         path_var: str = os.environ["PATH"]
         for seq in path_var.split(os.pathsep):
             dir_path = Path(seq)
             if not dir_path.exists():
                 continue
             for file in dir_path.iterdir():
-                if file.name == command and os.access(dir_path / file, os.X_OK): #matches command and executable
-                    return True, dir_path / file
+                if os.access(dir_path / file, os.X_OK):
+                    result[file.name] = dir_path / file
+        return result
+
+
+    def is_path_command(self, command: str) -> tuple[bool, Path|None]:
+
+        commands: dict[str, str] = self.get_path_commands()
+        if command in commands:
+            return True, commands[command]
         return False, None
 
 
@@ -160,7 +169,7 @@ class Shell:
 
     def completer(self, text: str, state: int) -> str | None:
 
-        matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
+        matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)] + [key for key in self.get_path_commands() if key.startswith(text)]
 
         try:
             return matches[state] + " "
