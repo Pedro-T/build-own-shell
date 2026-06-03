@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 from typing import Callable
 from contextlib import redirect_stdout, redirect_stderr
+import enum
 
 
 class Shell:
@@ -12,6 +13,7 @@ class Shell:
         self.buffer: str = ""
         self.stdout_target: str | None = None
         self.stderr_target: str | None = None
+        self.redirect_mode: RedirectMode = RedirectMode.OVERWRITE
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -113,6 +115,25 @@ class Shell:
             i += 1
         if token:
             tokens.append(token)
+        for idx, token in enumerate(tokens):
+            if token.endswith(">") and len(tokens) > idx + 1:
+                token: str = token.replace("1>", ">")
+                target: str = tokens[idx+1]
+                match token:
+                    case ">":
+                        self.redirect_mode = RedirectMode.OVERWRITE
+                        self.stdout_target = target
+                    case ">>":
+                        self.redirect_mode = RedirectMode.APPEND
+                        self.stdout_target = target
+                    case "2>":
+                        self.redirect_mode = RedirectMode.OVERWRITE
+                        self.stderr_target = target
+                    case "2>>":
+                        self.redirect_mode = RedirectMode.APPEND
+                        self.stderr_target = target
+                return tokens[:idx]                
+
         return tokens
 
 
@@ -125,10 +146,10 @@ class Shell:
             valid_external, _ = self.is_path_command(user_input[0])
             if valid_external:
                 if self.stdout_target:
-                    with open(self.stdout_target, "w") as f:
+                    with open(self.stdout_target, self.redirect_mode.value) as f:
                         subprocess.run(user_input, stdout=f)
                 elif self.stderr_target:
-                    with open(self.stderr_target, "w") as f:
+                    with open(self.stderr_target, self.redirect_mode.value) as f:
                         subprocess.run(user_input, stderr=f)
                 else:
                     subprocess.run(user_input)
@@ -138,6 +159,7 @@ class Shell:
 
     def main(self):
 
+        """
         def capture_redirect(user_input: str) -> list[str]:
             user_input = [token.replace("1>", ">") for token in user_input]
             if ">" in user_input:
@@ -151,6 +173,7 @@ class Shell:
                     self.stderr_target = user_input[idx]
                 user_input = user_input[:idx-1]
             return user_input
+            """
 
         while True:
             self.buffer = ""
@@ -159,17 +182,21 @@ class Shell:
             self.stderr_target = None
             sys.stdout.write("$ ")
             user_input: list[str] = self.parse_input(input())
-            user_input = capture_redirect(user_input)
             if self.stdout_target:
-                with open(self.stdout_target, "w") as f:
+                with open(self.stdout_target, self.redirect_mode.value) as f:
                     with redirect_stdout(f):
                         self.handle_input(user_input)
             elif self.stderr_target:
-                with open(self.stderr_target, "w") as f:
+                with open(self.stderr_target, self.redirect_mode.value) as f:
                     with redirect_stderr(f):
                         self.handle_input(user_input)
             else:
                 self.handle_input(user_input)
+
+
+class RedirectMode(enum.Enum):
+    OVERWRITE = "w"
+    APPEND = "a"
 
 
 if __name__ == "__main__":
