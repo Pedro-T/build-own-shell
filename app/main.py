@@ -5,6 +5,7 @@ import subprocess
 from typing import Callable
 from contextlib import redirect_stdout, redirect_stderr
 import enum
+import readline
 
 
 class Shell:
@@ -157,31 +158,30 @@ class Shell:
                 self.print_not_found(user_input[0])
 
 
-    def main(self):
+    def completer(self, text: str, state: int) -> str | None:
 
-        """
-        def capture_redirect(user_input: str) -> list[str]:
-            user_input = [token.replace("1>", ">") for token in user_input]
-            if ">" in user_input:
-                idx: int = user_input.index(">") + 1
-                if len(user_input) > idx:
-                    self.stdout_target = user_input[idx]
-                user_input = user_input[:idx-1]
-            elif "2>" in user_input:
-                idx: int = user_input.index("2>") + 1
-                if len(user_input) > idx:
-                    self.stderr_target = user_input[idx]
-                user_input = user_input[:idx-1]
-            return user_input
-            """
+        matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
+
+        try:
+            return matches[state]
+        except IndexError:
+            return None
+
+
+    def main(self):
+        
+        readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
+        readline.set_completer(self.completer)
+        readline.parse_and_bind("bind ^I rl_complete") # due to libedit apparently
 
         while True:
             self.buffer = ""
             self.redirect = False
             self.stdout_target = None
             self.stderr_target = None
-            sys.stdout.write("$ ")
-            user_input: list[str] = self.parse_input(input())
+            self.redirect_mode = RedirectMode.OVERWRITE
+
+            user_input: list[str] = self.parse_input(input("$ "))
             if self.stdout_target:
                 with open(self.stdout_target, self.redirect_mode.value) as f:
                     with redirect_stdout(f):
@@ -192,6 +192,13 @@ class Shell:
                         self.handle_input(user_input)
             else:
                 self.handle_input(user_input)
+
+
+class ParserState(enum.Enum):
+    GENERAL = 1
+    SINGLE_QUOTE = 2
+    DOUBLE_QUOTE = 3
+    ESCAPE = 4
 
 
 class RedirectMode(enum.Enum):
