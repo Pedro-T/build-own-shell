@@ -127,6 +127,9 @@ class Shell:
                 if self.stdout_target:
                     with open(self.stdout_target, "w") as f:
                         subprocess.run(user_input, stdout=f)
+                elif self.stderr_target:
+                    with open(self.stderr_target, "w") as f:
+                        subprocess.run(user_input, stderr=f)
                 else:
                     subprocess.run(user_input)
             else:
