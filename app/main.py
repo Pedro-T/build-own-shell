@@ -3,15 +3,15 @@ import os
 from pathlib import Path
 import subprocess
 from typing import Callable
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 
 
 class Shell:
 
     def __init__(self):
         self.buffer: str = ""
-        self.redirect: bool = False
-        self.stdout_target: str = ""
+        self.stdout_target: str | None = None
+        self.stderr_target: str | None = None
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -19,13 +19,14 @@ class Shell:
             "pwd": self._builtin_pwd,
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else "")
         }
-        
 
     def _builtin_echo(self, args: list[str]) -> None:
-        print(" ".join(args[1:]) if len(args) > 1 else "")
+        self.print(" ".join(args[1:]) if len(args) > 1 else "")
+
 
     def _builtin_pwd(self, args: list[str]) -> None:
-        print(os.getcwd())
+        self.print(os.getcwd())
+
 
     def _builtin_cd(self, req_path: str, absolute=False) -> None:
         if req_path.startswith("~"):
@@ -140,13 +141,11 @@ class Shell:
                 idx: int = user_input.index(">") + 1
                 if len(user_input) > idx:
                     self.stdout_target = user_input[idx]
-                    self.redirect = True
                 user_input = user_input[:idx-1]
             elif "2>" in user_input:
                 idx: int = user_input.index("2>") + 1
                 if len(user_input) > idx:
                     self.stderr_target = user_input[idx]
-                    self.redirect = True
                 user_input = user_input[:idx-1]
             return user_input
 
@@ -157,9 +156,13 @@ class Shell:
             sys.stdout.write("$ ")
             user_input: list[str] = self.parse_input(input())
             user_input = capture_redirect(user_input)
-            if self.redirect:
+            if self.stdout_target:
                 with open(self.stdout_target, "w") as f:
                     with redirect_stdout(f):
+                        self.handle_input(user_input)
+            elif self.stderr_target:
+                with open(self.stderr_target, "w") as f:
+                    with redirect_stderr(f):
                         self.handle_input(user_input)
             else:
                 self.handle_input(user_input)
