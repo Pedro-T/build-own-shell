@@ -163,7 +163,7 @@ class Shell:
         matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
 
         try:
-            return matches[state]
+            return matches[state] + " "
         except IndexError:
             return None
 
