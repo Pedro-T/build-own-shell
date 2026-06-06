@@ -175,7 +175,17 @@ class Shell:
             self.matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
             self.matches.extend([key for key in self.path_commands.keys() if key.startswith(text)])
         elif state == 0 and not complete_commands:
-            dir: Path = Path(os.getcwd())
+            if "/" in text:
+                # find files down that path
+                parts: list[str] = (text.rsplit("/", 1))
+                if not len(parts) == 2:
+                    return None
+                dir: Path = Path(os.getcwd()) / parts[0]
+                if not dir.is_dir():
+                    return None
+                self.matches += [parts[0] + "/" + file.name for file in dir.iterdir() if file.name.startswith(parts[1])]
+            else:
+                dir: Path = Path(os.getcwd())
             self.matches += [file.name for file in dir.iterdir() if file.is_file() and file.name.startswith(text)]
 
         try:
@@ -186,7 +196,7 @@ class Shell:
 
     def main(self):
         
-        readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
+        readline.set_completer_delims(readline.get_completer_delims().replace("/", "")) # we want these for paths
         readline.set_completer(self.completer)
         if "libedit" in readline.__doc__:
             readline.parse_and_bind("bind ^I rl_complete")
