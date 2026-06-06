@@ -168,10 +168,15 @@ class Shell:
 
 
     def completer(self, text: str, state: int) -> str | None:
-        if state == 0:
-            self.matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)] + [self.path_commands.keys()]
+        buffer: list[str] = readline.get_line_buffer().split()
+        complete_commands: bool = len(buffer) == 1
+
+        if state == 0 and complete_commands:
+            self.matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
+            self.matches.extend([key for key in self.path_commands.keys() if key.startswith(text)])
+        elif state == 0 and not complete_commands:
             dir: Path = Path(os.getcwd())
-            self.matches += [file for file in dir.iterdir() if file.is_file()]
+            self.matches += [file.name for file in dir.iterdir() if file.is_file() and file.name.startswith(text)]
 
         try:
             return self.matches[state] + " "
@@ -181,7 +186,7 @@ class Shell:
 
     def main(self):
         
-        #readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
+        readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
         readline.set_completer(self.completer)
         if "libedit" in readline.__doc__:
             readline.parse_and_bind("bind ^I rl_complete")
