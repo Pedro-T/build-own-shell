@@ -23,8 +23,20 @@ class Shell:
             "type": lambda args: self._builtin_type(args[1]) if len(args) > 1 else self.print_not_found(""),
             "pwd": self._builtin_pwd,
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
-            "history": lambda args: print("\n".join([f"{str(i+1).rjust(5)}  {readline.get_history_item(i+1)}" for i in range(readline.get_current_history_length())]))
+            "history": self._builtin_history
         }
+
+    def _builtin_history(self, args: list[str]) -> None:
+        length = readline.get_current_history_length() + 1
+        start: int = 1
+        if len(args) > 1:
+            try:
+                count = int(args[1])
+                start = length - count
+            except ValueError:
+                print("Invalid argument")
+        
+        print("\n".join([f"{str(i).rjust(5)}  {readline.get_history_item(i)}" for i in range(start, length)]))
 
     def _builtin_echo(self, args: list[str]) -> None:
         print(" ".join(args[1:]) if len(args) > 1 else "")
