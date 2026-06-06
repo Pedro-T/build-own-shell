@@ -11,10 +11,11 @@ import readline
 class Shell:
 
     def __init__(self):
-        self.buffer: str = ""
+        self.path_commands: dict[str, Path] = self.get_path_commands()
         self.stdout_target: str | None = None
         self.stderr_target: str | None = None
         self.redirect_mode: RedirectMode = RedirectMode.OVERWRITE
+        self.matches: list[str] = []
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -56,9 +57,8 @@ class Shell:
 
     def is_path_command(self, command: str) -> tuple[bool, Path|None]:
 
-        commands: dict[str, str] = self.get_path_commands()
-        if command in commands:
-            return True, commands[command]
+        if command in self.path_commands:
+            return True, self.path_commands[command]
         return False, None
 
 
@@ -168,11 +168,13 @@ class Shell:
 
 
     def completer(self, text: str, state: int) -> str | None:
-
-        matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)] + [key for key in self.get_path_commands() if key.startswith(text)]
+        if state == 0:
+            self.matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)] + [self.path_commands.keys()]
+            dir: Path = Path(os.getcwd())
+            self.matches += [file for file in dir.iterdir() if file.is_file()]
 
         try:
-            return matches[state] + " "
+            return self.matches[state] + " "
         except IndexError:
             return None
 

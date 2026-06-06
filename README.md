@@ -13,6 +13,6 @@ REPLs, builtin commands, and more.
 
 # Notes
 
-Doing this one as a learning exercise, no autocomplete and no looking at code examples. Minimal internet / documentation searches when necessary.
+Doing this one as a pure learning exercise. No AI, no autocomplete, and no looking at code examples. Minimal internet / documentation searches when necessary.
 
 It's not going to be pretty but if it works I consider that a success. Targeting 3-4 stages per day to complete in less than a month.
