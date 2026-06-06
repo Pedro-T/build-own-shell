@@ -22,7 +22,8 @@ class Shell:
             "echo": self._builtin_echo,
             "type": lambda args: self._builtin_type(args[1]) if len(args) > 1 else self.print_not_found(""),
             "pwd": self._builtin_pwd,
-            "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else "")
+            "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
+            "history": lambda args: print("\n".join([f"{str(i+1).rjust(5)}  {readline.get_history_item(i+1)}" for i in range(readline.get_current_history_length())]))
         }
 
     def _builtin_echo(self, args: list[str]) -> None:
