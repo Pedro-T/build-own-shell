@@ -15,7 +15,8 @@ class Shell:
         self.stdout_target: str | None = None
         self.stderr_target: str | None = None
         self.redirect_mode: RedirectMode = RedirectMode.OVERWRITE
-        self.matches: list[str] = []
+        self.matches: dict[str, str] = {}
+        self.autocomplete_commands: list[str] = []
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -168,35 +169,58 @@ class Shell:
 
 
     def completer(self, text: str, state: int) -> str | None:
-        buffer: list[str] = readline.get_line_buffer().split()
-        complete_commands: bool = len(buffer) == 1
+        buffer: str = readline.get_line_buffer()
 
-        if state == 0 and complete_commands:
-            self.matches: list[str] = [key for key in self._builtins.keys() if key.startswith(text)]
-            self.matches.extend([key for key in self.path_commands.keys() if key.startswith(text)])
-        elif state == 0 and not complete_commands:
-            if "/" in text:
-                # find files down that path
-                parts: list[str] = (text.rsplit("/", 1))
-                if not len(parts) == 2:
-                    return None
-                dir: Path = Path(os.getcwd()) / parts[0]
-                if not dir.is_dir():
-                    return None
-                self.matches += [parts[0] + "/" + file.name for file in dir.iterdir() if file.name.startswith(parts[1])]
+        if state == 0:
+            self.matches = {}
+            complete_commands: bool = not buffer.endswith(" ") and len(buffer.strip().split()) == 1
+            current_display: str = ""
+
+            if complete_commands:
+                commands = {key: " " for key in self._builtins.keys() if key.startswith(text)}
+                commands.update({key: " " for key in self.path_commands.keys() if key.startswith(text)})
+                self.matches = commands
             else:
-                dir: Path = Path(os.getcwd())
-            self.matches += [file.name for file in dir.iterdir() if file.is_file() and file.name.startswith(text)]
+                if "/" in text: # path is present
+                    # find files down that path
+                    parts: list[str] = (text.rsplit("/", 1))
+                    if not len(parts) == 2:
+                        return None
+                    dir: Path = Path(os.getcwd()) / parts[0]
+                    current_display = parts[0] + "/"
+                    search_prefix: str = parts[1]
+                else:
+                    dir: Path = Path(os.getcwd())
+                    search_prefix: str = text
+
+                if dir.is_dir():
+                    files: list[Path] = [f for f in dir.iterdir() if f.name.startswith(search_prefix)]
+
+                    if len(files) == 1: # only one file. auto-populate it, then go down its path if there is only one option
+                        current: Path = files[0]
+                        current_display += current.name
+                        """
+                        while current.is_dir():
+                            sub_files: list[Path] = list(current.iterdir())
+                            if len(sub_files) != 1:
+                                break
+                            current = sub_files[0]
+                            current_display += "/" + current.name
+                            """
+                        self.matches = {current_display: ("/" if current.is_dir() else " ")}
+                    elif len(files) > 1:
+                        self.matches.update({file.name: ("/" if file.is_dir() else " ") for file in dir.iterdir() if file.name.startswith(text)})
 
         try:
-            return self.matches[state] + " "
+            match: str = list(self.matches.keys())[state]
+            return match  + self.matches[match]
         except IndexError:
             return None
 
 
     def main(self):
         
-        readline.set_completer_delims(readline.get_completer_delims().replace("/", "")) # we want these for paths
+        readline.set_completer_delims(readline.get_completer_delims().replace("/", "").replace("-", "")) # we want these for paths
         readline.set_completer(self.completer)
         if "libedit" in readline.__doc__:
             readline.parse_and_bind("bind ^I rl_complete")
