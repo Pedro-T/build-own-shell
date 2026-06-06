@@ -181,7 +181,7 @@ class Shell:
 
     def main(self):
         
-        readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
+        #readline.set_completer_delims("\n`~!@#$%^&*()-=+[{]}\\|;:\' \",<>/?")
         readline.set_completer(self.completer)
         if "libedit" in readline.__doc__:
             readline.parse_and_bind("bind ^I rl_complete")
