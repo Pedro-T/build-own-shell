@@ -7,6 +7,10 @@ from contextlib import redirect_stdout, redirect_stderr
 import enum
 import readline
 from typing import Any
+from re import Pattern, compile
+
+
+VAR_PATTERN: Pattern = compile(r"^[A-Za-z_]{1}[A-Za-z0-9_]*$")
 
 
 class Shell:
@@ -29,12 +33,30 @@ class Shell:
             "declare": self._builtin_declare
         }
         self._vars: dict[str, Any] = {}
-    
+
+
+    def _is_valid_var(self, text: str) -> bool:
+        return VAR_PATTERN.fullmatch(text) is not None
+
+
     def _builtin_declare(self, args: list[str]) -> None:
+        if len(args) < 2:
+            return
         if len(args) > 2 and args[1] == "-p":
             var: str = args[2]
             if var not in self._vars:
                 print(f"declare: {var}: not found")
+            else:
+                print(f"declare -- {var}=\"{self._vars[var]}\"")
+        elif len(args) == 2 and "=" in args[1]:
+            parts: list[str] = args[1].split("=")
+            if not parts[0] or not parts[1]:
+                print("Invalid syntax")
+                return
+            if not self._is_valid_var(parts[0]):
+                print(f"'{parts[0]}': is not a valid identifier")
+            self._vars[parts[0]] = parts[1]
+            
 
     def _builtin_exit(self, args: list[str]) -> None:
         path: str = os.environ.get("HISTFILE")
