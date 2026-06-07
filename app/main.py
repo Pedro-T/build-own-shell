@@ -19,13 +19,19 @@ class Shell:
         self.autocomplete_commands: list[str] = []
         self.history_append_counter: int = 0
         self._builtins: dict[str, Callable] = {
-            "exit": lambda args: exit(0),
+            "exit": lambda args: self._exit(args),
             "echo": self._builtin_echo,
             "type": lambda args: self._builtin_type(args[1]) if len(args) > 1 else self.print_not_found(""),
             "pwd": self._builtin_pwd,
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
             "history": self._builtin_history
         }
+    
+    def _exit(self, args: list[str]) -> None:
+        path: str = os.environ.get("HISTFILE")
+        if path:
+            readline.write_history_file(path)
+        exit(0)
 
     def _builtin_history(self, args: list[str]) -> None:
         if len(args) >= 3:
