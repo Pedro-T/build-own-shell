@@ -246,6 +246,9 @@ class Shell:
 
 
     def main(self):
+        file: str = os.environ.get("HISTFILE")
+        if file and Path(file).is_file():
+            readline.read_history_file(file)
         
         readline.set_completer_delims(readline.get_completer_delims().replace("/", "").replace("-", "")) # we want these for paths
         readline.set_completer(self.completer)
