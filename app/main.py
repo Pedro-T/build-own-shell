@@ -54,7 +54,7 @@ class Shell:
                 print("Invalid syntax")
                 return
             if not self._is_valid_var(parts[0]):
-                print(f"'{parts[0]}': is not a valid identifier")
+                print(f"declare: `{args[1]}': not a valid identifier")
             self._vars[parts[0]] = parts[1]
             
 
