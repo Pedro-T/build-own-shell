@@ -27,6 +27,19 @@ class Shell:
         }
 
     def _builtin_history(self, args: list[str]) -> None:
+        if len(args) >= 3:
+            opt: str = args[1]
+            path: Path = Path(args[2])
+            match opt:
+                case "-r":
+                    if path.is_file():
+                        readline.read_history_file(path)
+                        return
+                case "-w":
+                    readline.write_history_file(path)
+                case "-a":
+                    readline.append_history_file(path)
+            return
         length = readline.get_current_history_length() + 1
         start: int = 1
         if len(args) > 1:
@@ -35,7 +48,6 @@ class Shell:
                 start = length - count
             except ValueError:
                 print("Invalid argument")
-        
         print("\n".join([f"{str(i).rjust(5)}  {readline.get_history_item(i)}" for i in range(start, length)]))
 
     def _builtin_echo(self, args: list[str]) -> None:
@@ -247,7 +259,16 @@ class Shell:
             self.stderr_target = None
             self.redirect_mode = RedirectMode.OVERWRITE
 
-            user_input: list[str] = self.parse_input(input("$ "))
+            # grab the most recent history item to compare for duplicate suppression
+            prev: str|None = None
+            curr_hist_len: int = readline.get_current_history_length()
+            if curr_hist_len > 1:
+                prev = readline.get_history_item(curr_hist_len)
+            raw_input: str = input("$ ")
+            if prev == raw_input and curr_hist_len == readline.get_current_history_length(): # didn't add
+                readline.add_history(raw_input)
+
+            user_input: list[str] = self.parse_input(raw_input)
             if self.stdout_target:
                 with open(self.stdout_target, self.redirect_mode.value) as f:
                     with redirect_stdout(f):
