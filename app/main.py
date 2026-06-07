@@ -6,6 +6,7 @@ from typing import Callable
 from contextlib import redirect_stdout, redirect_stderr
 import enum
 import readline
+from typing import Any
 
 
 class Shell:
@@ -19,15 +20,23 @@ class Shell:
         self.autocomplete_commands: list[str] = []
         self.history_append_counter: int = 0
         self._builtins: dict[str, Callable] = {
-            "exit": lambda args: self._exit(args),
+            "exit": lambda args: self._builtin_exit(args),
             "echo": self._builtin_echo,
             "type": lambda args: self._builtin_type(args[1]) if len(args) > 1 else self.print_not_found(""),
             "pwd": self._builtin_pwd,
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
-            "history": self._builtin_history
+            "history": self._builtin_history,
+            "declare": self._builtin_declare
         }
+        self._vars: dict[str, Any] = {}
     
-    def _exit(self, args: list[str]) -> None:
+    def _builtin_declare(self, args: list[str]) -> None:
+        if len(args) > 2 and args[1] == "-p":
+            var: str = args[2]
+            if var not in self._vars:
+                print(f"declare: {var}: not found")
+
+    def _builtin_exit(self, args: list[str]) -> None:
         path: str = os.environ.get("HISTFILE")
         if path:
             readline.write_history_file(path)
