@@ -146,19 +146,43 @@ class Shell:
         tokens: list[str] = []
 
         token: str = ""
-        curr_quot: str = ""
+        state: ParserState = ParserState.GENERAL
 
         i: int = 0
 
         while i < len(user_input):
             c = user_input[i]
+
+            if state != ParserState.SINGLE_QUOTE and c == "$":
+                if i == len(user_input) - 1:
+                    i += 1
+                    continue
+
+                i += 1 # advance to char after $
+                term_char: str = " "
+                if user_input[i] == "{": #if this is {} advance another char and change end char
+                    i += 1
+                    term_char = "}"
+
+                buffer: str = ""
+                while i < len(user_input) and user_input[i] != term_char:
+                    buffer += user_input[i]
+                    i += 1
+
+                if buffer and buffer in self._vars:
+                    token += self._vars[buffer]
+                if term_char == "}":
+                    i += 1
+                continue
+
+
             if c in ['"', "'"] and i < len(user_input) - 1 and user_input[i+1] == c:
                 i += 2
                 continue
-            if c == "\\" and curr_quot != "'":
+            elif c == "\\" and state != ParserState.SINGLE_QUOTE:
                 if i >= len(user_input) - 1:
                     i+= 1
-                elif curr_quot == '"' and user_input[i+1] not in ['"', "\\", "$", "`", "\n"]:
+                elif state == ParserState.DOUBLE_QUOTE and user_input[i+1] not in ['"', "\\", "$", "`", "\n"]:
                     token += c
                     i += 1
                 else:
@@ -166,30 +190,31 @@ class Shell:
                     i += 2
                 continue
             elif c == "'":
-                if curr_quot == "'": # we are in a single-quoted string and it just ended
-                    curr_quot = ""
-                elif not curr_quot: # start a new quoted sequence
-                    curr_quot = "'"
+                if state == ParserState.SINGLE_QUOTE: # we are in a single-quoted string and it just ended
+                    state = ParserState.GENERAL
+                elif state == ParserState.GENERAL: # start a new quoted sequence
+                    state = ParserState.SINGLE_QUOTE
                 else: # other quoted sequence, just append
                     token += c
             elif c == '"':
-                if curr_quot == '"': # we are in a double-quoted string and it just ended
-                    curr_quot = ""
-                elif not curr_quot: # start a new quoted sequence
-                    curr_quot = '"'
+                if state == ParserState.DOUBLE_QUOTE: # we are in a double-quoted string and it just ended
+                    state = ParserState.GENERAL
+                elif state == ParserState.GENERAL: # start a new quoted sequence
+                    state = ParserState.DOUBLE_QUOTE
                 else: # other quoted sequence, just append
                     token += c
             elif c == " ":
-                if token and not curr_quot:
+                if token and state == ParserState.GENERAL:
                     tokens.append(token)
                     token = ""
-                elif curr_quot:
+                elif state != ParserState.GENERAL:
                     token += c
             else:
                 token += c
             i += 1
         if token:
             tokens.append(token)
+
         for idx, token in enumerate(tokens):
             if token.endswith(">") and len(tokens) > idx + 1:
                 token: str = token.replace("1>", ">")
@@ -263,14 +288,6 @@ class Shell:
                     if len(files) == 1: # only one file. auto-populate it, then go down its path if there is only one option
                         current: Path = files[0]
                         current_display += current.name
-                        """
-                        while current.is_dir():
-                            sub_files: list[Path] = list(current.iterdir())
-                            if len(sub_files) != 1:
-                                break
-                            current = sub_files[0]
-                            current_display += "/" + current.name
-                            """
                         self.matches = {current_display: ("/" if current.is_dir() else " ")}
                     elif len(files) > 1:
                         self.matches.update({file.name: ("/" if file.is_dir() else " ") for file in dir.iterdir() if file.name.startswith(text)})
@@ -321,7 +338,6 @@ class ParserState(enum.Enum):
     GENERAL = 1
     SINGLE_QUOTE = 2
     DOUBLE_QUOTE = 3
-    ESCAPE = 4
 
 
 class RedirectMode(enum.Enum):
