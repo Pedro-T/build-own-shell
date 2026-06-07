@@ -17,6 +17,7 @@ class Shell:
         self.redirect_mode: RedirectMode = RedirectMode.OVERWRITE
         self.matches: dict[str, str] = {}
         self.autocomplete_commands: list[str] = []
+        self.history_append_counter: int = 0
         self._builtins: dict[str, Callable] = {
             "exit": lambda args: exit(0),
             "echo": self._builtin_echo,
@@ -38,7 +39,8 @@ class Shell:
                 case "-w":
                     readline.write_history_file(path)
                 case "-a":
-                    readline.append_history_file(path)
+                    readline.append_history_file(self.history_append_counter, path)
+                    self.history_append_counter = 0
             return
         length = readline.get_current_history_length() + 1
         start: int = 1
@@ -253,21 +255,15 @@ class Shell:
             readline.parse_and_bind("tab: complete")
 
         while True:
+            self.history_append_counter += 1
             self.buffer = ""
             self.redirect = False
             self.stdout_target = None
             self.stderr_target = None
             self.redirect_mode = RedirectMode.OVERWRITE
 
-            # grab the most recent history item to compare for duplicate suppression
-            prev: str|None = None
-            curr_hist_len: int = readline.get_current_history_length()
-            if curr_hist_len > 1:
-                prev = readline.get_history_item(curr_hist_len)
             raw_input: str = input("$ ")
-            if prev == raw_input and curr_hist_len == readline.get_current_history_length(): # didn't add
-                readline.add_history(raw_input)
-
+            
             user_input: list[str] = self.parse_input(raw_input)
             if self.stdout_target:
                 with open(self.stdout_target, self.redirect_mode.value) as f:
