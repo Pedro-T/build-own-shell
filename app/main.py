@@ -30,10 +30,14 @@ class Shell:
             "pwd": self._builtin_pwd,
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
             "history": self._builtin_history,
-            "declare": self._builtin_declare
+            "declare": self._builtin_declare,
+            "complete": self._builtin_complete
         }
         self._vars: dict[str, Any] = {}
 
+
+    def _builtin_complete(self, args: list[str]) -> None:
+        pass
 
     def _is_valid_var(self, text: str) -> bool:
         return VAR_PATTERN.fullmatch(text) is not None
