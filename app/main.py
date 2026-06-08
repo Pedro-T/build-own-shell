@@ -33,11 +33,30 @@ class Shell:
             "declare": self._builtin_declare,
             "complete": self._builtin_complete
         }
+        self._completers: dict[str, str] = {}
         self._vars: dict[str, Any] = {}
 
 
     def _builtin_complete(self, args: list[str]) -> None:
-        pass
+        if len(args) < 2:
+            return
+        match args[1]:
+            case "-C":
+                try:
+                    self._completers[args[3]] = args[2]
+                except IndexError:
+                    print("Invalid arguments")
+            case "-p":
+                try:
+                    if args[2] in self._completers:
+                        print(f"complete -C \'{self._completers[args[2]]}\' {args[2]}")
+                    else:
+                        print(f"complete: {args[2]}: no completion specification")
+                except IndexError:
+                    print("Invalid arguments")
+            case _:
+                print("Invalid arguments")
+
 
     def _is_valid_var(self, text: str) -> bool:
         return VAR_PATTERN.fullmatch(text) is not None
