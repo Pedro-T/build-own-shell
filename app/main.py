@@ -294,10 +294,12 @@ class Shell:
                 commands.update({key: " " for key in self.path_commands.keys() if key.startswith(text)})
                 self.matches = commands
             else:
-                last: str = buffer.split()[-1]
-                if last in self._completers:
-                    path: str = self._completers[last]
-                    proc: subprocess.CompletedProcess = subprocess.run([path], capture_output=True, text=True)
+                buff_parts: list[str] = buffer.split()
+                last: str = buff_parts[-2] if len(buff_parts) > 2 else ""
+                first: str = buff_parts[0]
+                if first in self._completers:
+                    path: str = self._completers[first]
+                    proc: subprocess.CompletedProcess = subprocess.run([path, first, text, last], capture_output=True, text=True)
                     output: str = proc.stdout
                     self.matches = {option: " " for option in output.split()}
                     try:
