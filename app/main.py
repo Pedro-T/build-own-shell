@@ -285,6 +285,7 @@ class Shell:
 
         if state == 0:
             self.matches = {}
+            
             complete_commands: bool = not buffer.endswith(" ") and len(buffer.strip().split()) == 1
             current_display: str = ""
 
@@ -293,7 +294,19 @@ class Shell:
                 commands.update({key: " " for key in self.path_commands.keys() if key.startswith(text)})
                 self.matches = commands
             else:
-                if "/" in text: # path is present
+                last: str = buffer.split()[-1]
+                if last in self._completers:
+                    path: str = self._completers[last]
+                    proc: subprocess.CompletedProcess = subprocess.run([path], capture_output=True, text=True)
+                    output: str = proc.stdout
+                    self.matches = {option: " " for option in output.split()}
+                    try:
+                        match: str = list(self.matches.keys())[state]
+                        return match  + self.matches[match]
+                    except IndexError:
+                        return None
+
+                elif "/" in text: # path is present
                     # find files down that path
                     parts: list[str] = (text.rsplit("/", 1))
                     if not len(parts) == 2:
@@ -314,6 +327,7 @@ class Shell:
                         self.matches = {current_display: ("/" if current.is_dir() else " ")}
                     elif len(files) > 1:
                         self.matches.update({file.name: ("/" if file.is_dir() else " ") for file in dir.iterdir() if file.name.startswith(text)})
+            
 
         try:
             match: str = list(self.matches.keys())[state]
