@@ -54,6 +54,14 @@ class Shell:
                         print(f"complete: {args[2]}: no completion specification")
                 except IndexError:
                     print("Invalid arguments")
+            case "-r":
+                try:
+                    if args[2] in self._completers:
+                        del self._completers[args[2]]
+                    else:
+                        print(f"complete: {args[2]}: no completion specification")
+                except IndexError:
+                    print("Invalid syntax")
             case _:
                 print("Invalid arguments")
 
@@ -299,7 +307,15 @@ class Shell:
                 first: str = buff_parts[0]
                 if first in self._completers:
                     path: str = self._completers[first]
-                    proc: subprocess.CompletedProcess = subprocess.run([path, first, text, last], capture_output=True, text=True)
+                    proc: subprocess.CompletedProcess = subprocess.run(
+                        [path, first, text, last], 
+                        capture_output=True, 
+                        text=True,
+                        env={
+                            **os.environ,
+                            "COMP_LINE": buffer,
+                            "COMP_POINT": str(len(buffer))
+                        })
                     output: str = proc.stdout
                     self.matches = {option: " " for option in output.split()}
                     try:
