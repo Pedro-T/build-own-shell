@@ -303,8 +303,9 @@ class Shell:
                 self.matches = commands
             else:
                 buff_parts: list[str] = buffer.split()
-                last: str = buff_parts[-2] if len(buff_parts) > 2 else ""
                 first: str = buff_parts[0]
+                last: str = buff_parts[-2] if len(buff_parts) > 2 else first
+                
                 if first in self._completers:
                     path: str = self._completers[first]
                     proc: subprocess.CompletedProcess = subprocess.run(
