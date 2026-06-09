@@ -13,9 +13,14 @@ from re import Pattern, compile
 VAR_PATTERN: Pattern = compile(r"^[A-Za-z_]{1}[A-Za-z0-9_]*$")
 
 
+class JobManager:
+    pass
+
+
 class Shell:
 
     def __init__(self):
+        self.job_manager: JobManager = JobManager()
         self.path_commands: dict[str, Path] = self.get_path_commands()
         self.stdout_target: str | None = None
         self.stderr_target: str | None = None
@@ -31,10 +36,15 @@ class Shell:
             "cd": lambda args: self._builtin_cd(args[1] if len(args) > 1 else ""),
             "history": self._builtin_history,
             "declare": self._builtin_declare,
-            "complete": self._builtin_complete
+            "complete": self._builtin_complete,
+            "jobs": self._builtin_jobs
         }
         self._completers: dict[str, str] = {}
         self._vars: dict[str, Any] = {}
+
+
+    def _builtin_jobs(self, args: list[str]) -> None:
+        pass
 
 
     def _builtin_complete(self, args: list[str]) -> None:
