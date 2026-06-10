@@ -49,6 +49,7 @@ class JobManager:
         while idx < len(self.jobs):
             job: Job = self.jobs[idx]
             if not job:
+                idx += 1
                 continue
             state: int|None = job.process.poll()
             state_msg: str = "Running" if state is None else "Done"
