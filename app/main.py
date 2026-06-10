@@ -14,13 +14,43 @@ VAR_PATTERN: Pattern = compile(r"^[A-Za-z_]{1}[A-Za-z0-9_]*$")
 
 
 class JobManager:
-    pass
+    def __init__(self):
+        self.jobs: list[subprocess.Popen] = []
+    
+    def add_job(self, command: str) -> None:
+        job = subprocess.Popen(command, shell=True)
+        slot: int = -1
+        for i in range(len(self.jobs)):
+            if self.jobs[i] == None:
+                self.jobs[i] = job
+                slot = i+1
+                break
+        if slot < 0:
+            self.jobs.append(job)
+            slot = len(self.jobs)
+        print(f"[{len(self.jobs)}] {job.pid}")
+
+
+    def list_jobs(self) -> None:
+        idx: int = 0
+
+        while idx < len(self.jobs):
+            job = self.jobs[idx]
+            if not job:
+                continue
+            state: int|None = job.poll()
+            state_msg: str = "Running" if state is None else "Done"
+            msg: str = f"[{idx+1}]{'+' if idx == 0 else '-' if idx == 1 else ' '}  {state_msg.ljust(24)}{job.args}"
+            print(msg)
+            if state is not None:
+                self.jobs[idx] = None
+            idx += 1
 
 
 class Shell:
 
     def __init__(self):
-        self.job_manager: JobManager = JobManager()
+        self.job_manager = JobManager()
         self.path_commands: dict[str, Path] = self.get_path_commands()
         self.stdout_target: str | None = None
         self.stderr_target: str | None = None
@@ -44,7 +74,7 @@ class Shell:
 
 
     def _builtin_jobs(self, args: list[str]) -> None:
-        pass
+        self.job_manager.list_jobs()
 
 
     def _builtin_complete(self, args: list[str]) -> None:
@@ -284,6 +314,9 @@ class Shell:
         elif user_input[0] in self._builtins:
             self._builtins[user_input[0]](user_input)
         else:
+            if user_input[-1] == "&":
+                self.job_manager.add_job(" ".join(user_input[:-1]))
+                return
             valid_external, _ = self.is_path_command(user_input[0])
             if valid_external:
                 if self.stdout_target:
@@ -404,6 +437,12 @@ class ParserState(enum.Enum):
     GENERAL = 1
     SINGLE_QUOTE = 2
     DOUBLE_QUOTE = 3
+
+
+class JobState(enum.Enum):
+    PENDING = "Pending"
+    RUNNING = "Running"
+    DONE = "Done"
 
 
 class RedirectMode(enum.Enum):
