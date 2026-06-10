@@ -39,6 +39,21 @@ class JobManager:
         print(f"[{slot}] {job.process.pid}")
 
 
+    def clean_jobs(self) -> None:
+        sorted_starts: list[Job] = sorted([job for job in self.jobs if job], key=lambda job: job.start_time, reverse=True)
+        if not sorted_starts: # also means there are no jobs, so nothing to do
+            return
+        for idx in range(len(self.jobs)):
+            job: Job|None = self.jobs[idx]
+            if job is None:
+                continue
+            if job.process.poll() is None:
+                continue
+            msg: str = f"[{idx+1}]{'+' if job == sorted_starts[0] else '-' if (len(sorted_starts) > 1 and job == sorted_starts[1]) else " "}  {'Done'.ljust(24)}{job.process.args}"
+            print(msg)
+            self.jobs[idx] = None
+                
+
     def list_jobs(self) -> None:
         
         idx: int = 0
@@ -431,6 +446,7 @@ class Shell:
             self.stderr_target = None
             self.redirect_mode = RedirectMode.OVERWRITE
 
+            self.job_manager.clean_jobs()
             raw_input: str = input("$ ")
             
             user_input: list[str] = self.parse_input(raw_input)
