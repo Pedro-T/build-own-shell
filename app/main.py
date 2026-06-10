@@ -1,4 +1,3 @@
-import sys
 import os
 from pathlib import Path
 import subprocess
@@ -8,17 +7,26 @@ import enum
 import readline
 from typing import Any
 from re import Pattern, compile
+from dataclasses import dataclass
+from time import time
 
 
 VAR_PATTERN: Pattern = compile(r"^[A-Za-z_]{1}[A-Za-z0-9_]*$")
 
 
+@dataclass
+class Job:
+    process: subprocess.Popen
+    start_time: float
+
+
 class JobManager:
     def __init__(self):
-        self.jobs: list[subprocess.Popen] = []
+        self.jobs: list[Job] = []
     
     def add_job(self, command: str) -> None:
-        job = subprocess.Popen(command, shell=True)
+        job: Job = Job(subprocess.Popen(command, shell=True), time())
+        
         slot: int = -1
         for i in range(len(self.jobs)):
             if self.jobs[i] == None:
@@ -28,19 +36,21 @@ class JobManager:
         if slot < 0:
             self.jobs.append(job)
             slot = len(self.jobs)
-        print(f"[{len(self.jobs)}] {job.pid}")
+        print(f"[{slot}] {job.process.pid}")
 
 
     def list_jobs(self) -> None:
         idx: int = 0
 
+        sorted_starts: list[Job] = sorted(self.jobs, key=lambda job: job.start_time, reverse=True)
+
         while idx < len(self.jobs):
-            job = self.jobs[idx]
+            job: Job = self.jobs[idx]
             if not job:
                 continue
-            state: int|None = job.poll()
+            state: int|None = job.process.poll()
             state_msg: str = "Running" if state is None else "Done"
-            msg: str = f"[{idx+1}]{'+' if idx == 0 else '-' if idx == 1 else ' '}  {state_msg.ljust(24)}{job.args}"
+            msg: str = f"[{idx+1}]{'+' if job == sorted_starts[0] else '-' if (len(sorted_starts) > 1 and job == sorted_starts[1]) else " "}  {state_msg.ljust(24)}{job.process.args}"
             print(msg)
             if state is not None:
                 self.jobs[idx] = None
