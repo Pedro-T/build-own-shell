@@ -40,10 +40,12 @@ class JobManager:
 
 
     def list_jobs(self) -> None:
+        
         idx: int = 0
-
-        sorted_starts: list[Job] = sorted(self.jobs, key=lambda job: job.start_time, reverse=True)
-
+        sorted_starts: list[Job] = sorted([job for job in self.jobs if job], key=lambda job: job.start_time, reverse=True)
+        if not sorted_starts: # also means there are no jobs, so nothing to do
+            return
+        
         while idx < len(self.jobs):
             job: Job = self.jobs[idx]
             if not job:
